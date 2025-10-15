@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "bootstrap": "tsx src/index.ts bootstrap",
+    "bootstrap:auto": "AUTO_CONFIRM=1 tsx src/index.ts bootstrap --auto",
     "tailscale-status": "tsx src/index.ts tailscale-status"
   },
   "dependencies": {

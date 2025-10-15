@@ -118,6 +118,12 @@ EOF
 fi
 echo "    Using ${TAILSCALE_BIN}"
 
+echo "==> Ensuring tailscaled system daemon is installed"
+if command -v tailscaled >/dev/null 2>&1; then
+  sudo tailscaled install-system-daemon >/dev/null 2>&1 || true
+  sudo launchctl load -w /Library/LaunchDaemons/com.tailscale.tailscaled.plist >/dev/null 2>&1 || true
+fi
+
 echo "==> Enabling fail2ban via launchctl"
 if ! "${BREW_BIN}" services list | grep -q fail2ban; then
   sudo "${BREW_BIN}" services start fail2ban

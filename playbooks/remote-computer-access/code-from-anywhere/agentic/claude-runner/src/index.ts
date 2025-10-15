@@ -31,14 +31,17 @@ async function main() {
     process.exit(1);
   }
 
-  const task = process.argv[2] ?? "bootstrap";
-  const dryRun = process.argv.includes("--dry-run");
-  const snapshot = await collectPreflightSnapshot(playbookRoot);
-  const preflight = formatPreflightForPrompt(snapshot);
+const args = process.argv.slice(2);
+const task = args[0] ?? "bootstrap";
+const flags = args.slice(1);
+const dryRun = process.argv.includes("--dry-run");
+const autoConfirm = process.argv.includes("--auto") || process.env.AUTO_CONFIRM === "1";
+const snapshot = await collectPreflightSnapshot(playbookRoot);
+const preflight = formatPreflightForPrompt(snapshot);
 
   switch (task) {
     case "bootstrap":
-      await runBootstrap({ dryRun, preflight, snapshot });
+      await runBootstrap({ dryRun, autoConfirm, preflight, snapshot });
       break;
     case "tailscale-status":
       await runTailscaleAudit({ preflight });
@@ -51,11 +54,12 @@ async function main() {
 
 interface RunBootstrapOptions {
   dryRun: boolean;
+  autoConfirm: boolean;
   preflight: string;
   snapshot: Awaited<ReturnType<typeof collectPreflightSnapshot>>;
 }
 
-async function runBootstrap({ dryRun, preflight, snapshot }: RunBootstrapOptions) {
+async function runBootstrap({ dryRun, autoConfirm, preflight, snapshot }: RunBootstrapOptions) {
   const prompt = [
     "Bootstrap the Mac Studio host per the Code From Anywhere playbook.",
     "Steps to perform:",
@@ -68,6 +72,7 @@ async function runBootstrap({ dryRun, preflight, snapshot }: RunBootstrapOptions
     "",
     `Dry run requested: ${dryRun ? "yes" : "no"} (set DRY_RUN=1 when executing commands if yes).`,
     `TAILSCALE_AUTH_KEY present: ${process.env.TAILSCALE_AUTH_KEY ? "yes" : "no"}`,
+    `Auto-confirm mode: ${autoConfirm ? "yes" : "no"} (proceed without asking if yes).`,
     snapshot.sudo.cached
       ? "- Sudo credential is cached; initial sudo commands should succeed without prompts."
       : "- Sudo credential is NOT cached; prompt the operator before issuing sudo commands."
@@ -75,6 +80,7 @@ async function runBootstrap({ dryRun, preflight, snapshot }: RunBootstrapOptions
 
   const environment = {
     ...(dryRun ? { DRY_RUN: "1" } : {}),
+    ...(autoConfirm ? { AUTO_CONFIRM: "1" } : {}),
     ...(process.env.TAILSCALE_AUTH_KEY
       ? { TAILSCALE_AUTH_KEY: process.env.TAILSCALE_AUTH_KEY }
       : {})

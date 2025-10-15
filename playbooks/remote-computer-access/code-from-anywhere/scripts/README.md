@@ -9,9 +9,10 @@ Prepares a Mac Studio (Ventura/Sonoma) host for remote development:
 1. Forces the machine to stay awake (`pmset`).
 2. Installs Xcode CLI tools and Homebrew (if missing), then `tmux`, `fail2ban`, and the **Homebrew Tailscale CLI** (the App Store build is ignored because it cannot run `tailscale up --ssh`).
 3. Ensures Homebrew’s shell environment is loaded for the target user.
-4. Manages `brew services` for Fail2Ban (runs under sudo).
-5. Enables Remote Login (SSH) and starts Tailscale with opinionated flags (`--ssh --accept-dns --advertise-tags=tag:devhost`).
-6. Verifies `tailscale status` at the end.
+4. Installs and loads the `tailscaled` system daemon so the Homebrew CLI can run headlessly.
+5. Manages `brew services` for Fail2Ban (runs under sudo).
+6. Enables Remote Login (SSH) and starts Tailscale with opinionated flags (`--ssh --accept-dns --advertise-tags=tag:devhost`).
+7. Verifies `tailscale status` at the end.
 
 **Usage**
 
@@ -46,6 +47,27 @@ Convenience wrapper that:
 ```
 
 Use this when you want a single command that validates before and after bootstrapping. The agentic harness calls this script directly.
+
+## automate-bootstrap.sh
+
+One-shot automation for unattended hosts. It:
+
+1. Loads environment variables from `.env` / `.env.local` so `TAILSCALE_AUTH_KEY` is available.
+2. Refreshes sudo credentials and keeps them alive during the run.
+3. Installs the Homebrew Tailscale CLI, installs the `tailscaled` system daemon, and logs in with the auth key if needed.
+4. Installs the agent harness dependencies (`npm install` in `agentic/claude-runner`).
+5. Delegates to the Claude agent (`npm run bootstrap:auto`), which runs the standard bootstrap/verification scripts.
+
+**Usage**
+
+```bash
+./playbooks/remote-computer-access/code-from-anywhere/scripts/automate-bootstrap.sh
+```
+
+**Prerequisites**
+
+- `TAILSCALE_AUTH_KEY` must be defined in `.env.local`.
+- You will still be prompted once for your macOS sudo password (the script runs `sudo -v` immediately). For passwordless operation, add an entry to `/etc/sudoers.d/` granting this script NOPASSWD rights.
 
 ## start-dev-session.sh
 

@@ -34,6 +34,7 @@ export function buildAgentDefinitions(context: AgentContext): Record<string, Age
         "3. If the caller asked for verification, run the follow-up script:",
         `   - ${verifyScript}`,
         "4. Keep prompts to the human minimal. Only ask when sudo password or Tailscale approval is required.",
+        "   - If environment variable AUTO_CONFIRM is '1', assume approval has already been granted and proceed without asking.",
         "5. After each significant command, capture output and surface warnings.",
         "6. Finish with a concise summary:",
         "   - ✅ Steps completed",

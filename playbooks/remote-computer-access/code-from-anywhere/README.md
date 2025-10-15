@@ -25,8 +25,9 @@ All scripts are POSIX shell with `set -euo pipefail`. They are safe to run multi
 
 | Script | Purpose | Key Flags / Env | Notes |
 | --- | --- | --- | --- |
-| `bootstrap-mac-host.sh` | Idempotently prepares the Mac Studio host (pmset, Homebrew, Fail2Ban, Tailscale, SSH hardening). | `TAILSCALE_AUTH_KEY` (optional) – lets you skip browser auth; `DRY_RUN=1` (respected when invoked via agentic harness). | Requires sudo. Installs the Homebrew Tailscale CLI even if the App Store GUI is present so SSH mode works. |
+| `bootstrap-mac-host.sh` | Idempotently prepares the Mac Studio host (pmset, Homebrew, Fail2Ban, Tailscale, SSH hardening). | `TAILSCALE_AUTH_KEY` (optional) – lets you skip browser auth; `DRY_RUN=1` (respected when invoked via agentic harness). | Requires sudo. Installs the Homebrew Tailscale CLI, sets up the `tailscaled` system daemon, and ignores the App Store GUI build so SSH mode works. |
 | `run-bootstrap-and-verify.sh` | Wrapper that runs the tests, refreshes sudo, executes the bootstrap script, then performs post-flight checks (`tailscale status`, `tmux -V`). | Inherits same env as bootstrap script. | Use this if you want a single command that validates before/after changes. |
+| `automate-bootstrap.sh` | End-to-end automation: loads env, refreshes sudo, ensures Tailscale CLI/daemon, installs agent deps, then triggers the Claude agent (`npm run bootstrap:auto`). | `TAILSCALE_AUTH_KEY` **required** in `.env.local`. | Designed for unattended runs; still prompts once for sudo unless you add a targeted `/etc/sudoers.d/` entry. |
 | `start-dev-session.sh` | Creates/attaches to a persistent `tmux` session named `dev` (override via `SESSION_NAME`). | `SESSION_NAME` (default `dev`). | Designed for client devices: copy to `~/bin` and invoke after SSH login. |
 
 ### Usage Examples
@@ -34,6 +35,9 @@ All scripts are POSIX shell with `set -euo pipefail`. They are safe to run multi
 ```bash
 # Run the full bootstrap (interactive; sudo & tailscale login required)
 ./scripts/run-bootstrap-and-verify.sh
+
+# Unattended bootstrap via Claude (loads auth key, ensures tailscaled, runs full flow)
+./scripts/automate-bootstrap.sh
 
 # Quick tmux attach from a client after copying the script into ~/bin
 SESSION_NAME=pair ~/bin/start-dev-session
@@ -62,6 +66,7 @@ Required environment variables (loaded in priority order: repo `.env`, repo `.en
 | --- | --- | --- |
 | `npm run bootstrap` | Preflight checks (script presence, sudo cache, current Tailscale state) → runs `run-bootstrap-and-verify.sh` via agent → summarizes actions & TODOs. | Confirms before running sudo; either enter the password, run `sudo -v` ahead of time, or configure `/etc/sudoers.d/` for passwordless execution. Without `TAILSCALE_AUTH_KEY`, the agent may still require you to approve the login in a browser. |
 | `npm run bootstrap -- --dry-run` | Same as above but sets `DRY_RUN=1`, so scripts only report planned actions. | Prompts for confirmation but does **not** change the system. |
+| `npm run bootstrap:auto` | Non-interactive bootstrap (sets `AUTO_CONFIRM=1`); agent proceeds without asking. | Requires `TAILSCALE_AUTH_KEY` and cached sudo or sudoers entry; no manual prompts. |
 | `npm run tailscale-status` | Runs `tailscale status --json`, `tailscale ip`, and `tailscale netcheck` (if needed) and prints a health summary. | Requests approval in the Claude CLI before executing read-only commands. |
 
 Agent behaviour highlights:
@@ -87,7 +92,7 @@ Always run one of the above before committing changes to scripts or the agent ha
 - Sudo and Tailscale approvals cannot be automated safely unless you pre-seed them. Run `sudo -v` before the agent or create a targeted rule in `/etc/sudoers.d/` if you want fully unattended bootstraps.
 - Keep `TAILSCALE_AUTH_KEY` scoped to a single-use or reusable key with limited privileges; store it in `.env.local` for the agent and revoke it via the Tailscale admin console when done.
 - `Fail2Ban` is installed via Homebrew and managed with `brew services`. Adjust `/opt/homebrew/etc/fail2ban/jail.local` to tune policies.
-- The bootstrap workflow expects the Homebrew Tailscale CLI; the App Store GUI alone cannot provide `tailscale up --ssh`.
+- The bootstrap workflow expects the Homebrew Tailscale CLI; the App Store GUI alone cannot provide `tailscale up --ssh`. The scripts automatically call `sudo tailscaled install-system-daemon` to ensure the system service is active.
 - Update the playbook (`playbook.md`) whenever you diverge from the documented workflow—future you will thank you.
 
 ## Related Documentation

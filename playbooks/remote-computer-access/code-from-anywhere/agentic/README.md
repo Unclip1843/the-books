@@ -52,8 +52,9 @@ Optional:
 
 | Command | Behaviour | Prompts |
 | --- | --- | --- |
-| `npm run bootstrap` | Runs preflight snapshot (script existence, sudo cache, tailscale state), lints `bootstrap-mac-host.sh`, executes `run-bootstrap-and-verify.sh`, describes results in ✅/⚠️ format. | Confirms before sudo use; you must enter the macOS password locally. Requests you approve the Tailscale login link if no auth key is provided. |
+| `npm run bootstrap` | Runs preflight snapshot (script existence, sudo cache, tailscale state), lints `bootstrap-mac-host.sh`, executes `run-bootstrap-and-verify.sh`, describes results in ✅/⚠️ format. | Confirms before sudo use; either enter the password, run `sudo -v` ahead of time, or add a targeted `/etc/sudoers.d/` rule. Without `TAILSCALE_AUTH_KEY`, you may still need to approve the Tailscale login in a browser. |
 | `npm run bootstrap -- --dry-run` | Same as above but exports `DRY_RUN=1` so scripts only log planned actions. | Still confirms intent but does not change the system. |
+| `npm run bootstrap:auto` | Non-interactive run; sets `AUTO_CONFIRM=1` and performs the full bootstrap workflow. | Requires `TAILSCALE_AUTH_KEY` and either cached sudo (`sudo -v`) or a sudoers rule. No manual prompts. |
 | `npm run tailscale-status` | Collects `tailscale status --peers=false --json`, `tailscale ip`, and conditionally `tailscale netcheck`; produces a short health report (SSH availability, tags, IPs). | Asks you to approve the read-only commands inside the Claude CLI session. |
 
 ### Subagents
@@ -67,7 +68,7 @@ Optional:
 ### Approval & safety guidelines
 
 - **Sudo**: the orchestrator detects whether credentials are cached. If not, the agent warns you before running sudo. For unattended runs, either execute `sudo -v` once beforehand or grant passwordless access to `run-bootstrap-and-verify.sh` via `/etc/sudoers.d/`.
-- **Tailscale**: if no auth key is provided, the bootstrap script prints a login URL. Approve the device in the Tailscale admin console; the agent reruns `tailscale status` afterwards.
+- **Tailscale**: scripts install the Homebrew CLI and call `sudo tailscaled install-system-daemon`. Provide a reusable auth key so the agent can run `tailscale up --ssh` without opening the App Store GUI. If no auth key is provided, the bootstrap script prints a login URL. Approve the device in the Tailscale admin console; the agent reruns `tailscale status` afterwards.
 - **Read-only commands**: tailscale audits still request approval inside the Claude CLI to avoid surprises.
 - **Secrets**: the agent never prints `TAILSCALE_AUTH_KEY` or the Claude API key. Rotate keys after use if operational policy requires it.
 

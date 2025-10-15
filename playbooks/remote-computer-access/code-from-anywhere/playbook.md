@@ -31,6 +31,7 @@ Use `rubric.md` to confirm the host is hardened, reachable, and observable befor
   xcode-select --install            # command line tools
   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
   brew install tmux fail2ban tailscale  # Tailscale CLI via Homebrew (enables SSH mode)
+  sudo tailscaled install-system-daemon # ensure non-sandboxed daemon is active
   sudo systemsetup -setremotelogin on
   ```
 5. **Optional automation.** Run `./playbooks/remote-computer-access/code-from-anywhere/scripts/bootstrap-mac-host.sh` for the commands above plus safety checks. The script keeps Homebrew on your login shell’s `$PATH` and accepts `TAILSCALE_AUTH_KEY` for unattended tailnet joins. See `./playbooks/remote-computer-access/code-from-anywhere/scripts/README.md` for a detailed breakdown of each helper.
