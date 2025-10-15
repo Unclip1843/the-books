@@ -1,0 +1,6 @@
+# Reference Documentation
+
+This directory stores scraped documentation for tools/SDKs that we reference but don't integrate into the main agent-documentation collection.
+
+## Contents
+- `openai-codex/` - OpenAI Codex CLI and agent documentation

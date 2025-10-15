@@ -1,0 +1,11 @@
+# macOS / Termux sample entry for the Mac Studio host
+Host mac-studio
+  HostName mac-studio.tailnet-name.ts.net
+  User codeops
+  IdentityFile ~/.ssh/id_ed25519_mac_studio
+  IdentitiesOnly yes
+  ServerAliveInterval 30
+  ServerAliveCountMax 2
+  ForwardAgent no
+  ControlMaster auto
+  ControlPersist 10m

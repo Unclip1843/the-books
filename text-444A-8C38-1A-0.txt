@@ -1,0 +1,50 @@
+Code From Anywhere – $100/month Guide
+
+You don’t need a desk. You don’t need IDE bloat. You don’t need “the setup.”
+
+You need a tunnel, a shell, and a brain.
+
+You could be coding:
+    •    on the beach
+    •    at a concert
+    •    at a boring dinner party
+    •    in the back of an Uber
+    •    hell, even while you’re “driving” (not recommended but possible)
+
+The Ingredients
+    •    A laptop or home computer that never sleeps
+    •    Bash shell + SSH installed
+    •    Your SSH key (already generated and added to ~/.ssh/)
+    •    An SSH client (iTerm, Termius, whatever)
+    •    A secure tunnel: WireGuard w/ DynDNS, Tailscale, or Cloudflare Tunnel
+
+The Trick
+
+Install screen or tmux on your always-on machine.
+That’s it. That’s the magic.
+
+Example:
+
+ssh user@your-box
+cd project-dir
+tmux new -s mysession
+
+Inside that session, spin up whatever you want (Claude, vim, server, REPL).
+Then detach with ctrl-b d.
+Walk away. Close your laptop. Lose internet. Doesn’t matter.
+
+When you’re back:
+
+ssh user@your-box
+tmux attach -t mysession
+
+The session never died. Your code is right where you left it.
+
+You just built a persistent workspace in the cloud—except it’s your cloud, not AWS.
+
+Why It Works
+
+Because UNIX doesn’t babysit you. Sessions don’t care if your Wi-Fi drops.
+They’ll keep running until you kill them.
+
+Code doesn’t stop. You just drop in and out. Like teleporting.

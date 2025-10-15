@@ -1,0 +1,11 @@
+{
+  "name": "tenant-base-app",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "express": "^4.19.2",
+    "better-sqlite3": "^9.4.0",
+    "undici": "^6.19.8"
+  }
+}
