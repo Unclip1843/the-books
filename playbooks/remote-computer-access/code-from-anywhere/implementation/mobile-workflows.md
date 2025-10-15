@@ -3,7 +3,7 @@
 Use this file as a quick reference for pairing phones/tablets with the Mac Studio host that runs the Code From Anywhere playbook. All instructions assume:
 
 - The Mac Studio is already bootstrapped (`automate-bootstrap.sh` or `npm run bootstrap:auto`).
-- You have MagicDNS enabled (e.g., `mac-studio.tailnet-name.ts.net`).
+- You have MagicDNS enabled. For this host the canonical name is **`admirables-mac-studio.tail784295.ts.net`**.
 - `start-dev-session.sh` lives at `~/bin/start-dev-session` on the Mac Studio and tmux is configured via the playbook.
 
 ## Common Prerequisites
@@ -11,6 +11,11 @@ Use this file as a quick reference for pairing phones/tablets with the Mac Studi
 1. Sign into the Tailscale app on the client device and ensure the VPN is active.
 2. Generate a device-specific SSH key (per phone/tablet) and add the public key to the Mac Studio user (`~codeops/.ssh/authorized_keys`).
 3. Use the MagicDNS hostname in all client configs—no need to memorize the Tailscale IP.
+4. Verify the host is reachable from any Tailscale-connected machine:
+   ```bash
+   ssh codeops@admirables-mac-studio.tail784295.ts.net "~/bin/start-dev-session"
+   ```
+   You should land inside the tmux session. Troubleshoot this first before onboarding phones.
 
 ## iPhone / iPad (Blink Shell)
 
@@ -29,7 +34,7 @@ Use this file as a quick reference for pairing phones/tablets with the Mac Studi
    - In Blink dotfiles (`config`), add:
      ```sh
      host mac-studio {
-       hostname mac-studio.tailnet-name.ts.net
+       hostname admirables-mac-studio.tail784295.ts.net
        user codeops
        identity iphone-codeops
        commands "~/bin/start-dev-session"
@@ -67,7 +72,7 @@ Use this file as a quick reference for pairing phones/tablets with the Mac Studi
    - Copy `implementation/ssh/config.home-dev` into Termux `~/.ssh/config`, adjusting:
      ```sshconfig
      Host mac-studio
-       HostName mac-studio.tailnet-name.ts.net
+       HostName admirables-mac-studio.tail784295.ts.net
        User codeops
        IdentityFile ~/.ssh/id_ed25519
        IdentitiesOnly yes
