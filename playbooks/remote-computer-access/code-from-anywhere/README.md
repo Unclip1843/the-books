@@ -9,8 +9,9 @@ code-from-anywhere/
 ├─ playbook.md                 # Human-friendly guide (host + client workflows)
 ├─ rubric.md                   # Verification checklist
 ├─ README.md                   # ← this file
-├─ implementation/             # Config templates referenced by the playbook
+├─ implementation/             # Config templates + mobile notes
 │  ├─ tmux.conf
+│  ├─ mobile-workflows.md
 │  └─ ssh/
 │     ├─ config.home-dev
 │     └─ sshd_config.macos
