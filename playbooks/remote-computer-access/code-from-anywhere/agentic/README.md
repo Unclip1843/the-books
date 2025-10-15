@@ -25,15 +25,57 @@ bootstrap the Mac Studio host, audit Tailscale status, and prepare client device
 
 ```bash
 cd claude-runner
-cp .env.example .env            # add your API key(s)
 npm install
-npm run bootstrap               # kicks off the host bootstrap subagent
-npm run tailscale-status        # runs the tailscale audit subagent
+# optional: cp .env.example .env and set overrides
+npm run bootstrap               # mac-bootstrap subagent (interactive)
+npm run tailscale-status        # tailscale-auditor subagent (read-only)
 ```
 
-The host subagent still requires the local machine to provide `sudo` credentials. For unattended
-flows provide a reusable `TAILSCALE_AUTH_KEY` in the environment file. Add `--dry-run` to any task
-to generate the plan without executing changes (the agent will pass `DRY_RUN=1` downstream).
+### Environment resolution
 
-💡 Keep the scripts in `scripts/` intact — the subagents call into them directly, so manual and
-agentic workflows stay in sync.
+`src/index.ts` loads secrets in this order (later entries override earlier ones):
+
+1. Repository root `.env`
+2. Repository root `.env.local`
+3. `claude-runner/.env` (optional project-specific overrides)
+
+Required variables:
+
+- `ANTHROPIC_API_KEY` – Claude Agent SDK access token.
+
+Optional:
+
+- `TAILSCALE_AUTH_KEY` – allows unattended `tailscale up`; add it to `.env.local` so the agent never pauses for a browser login.
+- `DRY_RUN=1` – when set manually, forces scripts to simulate actions.
+
+### Available commands
+
+| Command | Behaviour | Prompts |
+| --- | --- | --- |
+| `npm run bootstrap` | Runs preflight snapshot (script existence, sudo cache, tailscale state), lints `bootstrap-mac-host.sh`, executes `run-bootstrap-and-verify.sh`, describes results in ✅/⚠️ format. | Confirms before sudo use; you must enter the macOS password locally. Requests you approve the Tailscale login link if no auth key is provided. |
+| `npm run bootstrap -- --dry-run` | Same as above but exports `DRY_RUN=1` so scripts only log planned actions. | Still confirms intent but does not change the system. |
+| `npm run tailscale-status` | Collects `tailscale status --peers=false --json`, `tailscale ip`, and conditionally `tailscale netcheck`; produces a short health report (SSH availability, tags, IPs). | Asks you to approve the read-only commands inside the Claude CLI session. |
+
+### Subagents
+
+| Name | Tools | Responsibilities |
+| --- | --- | --- |
+| `mac-bootstrap` | Bash, Read, Grep | Preflight lint check, run bootstrap/verify scripts, highlight manual follow-ups, respect `DRY_RUN` & `TAILSCALE_AUTH_KEY`. |
+| `tailscale-auditor` | Bash, Read | Run read-only Tailscale diagnostics and render a concise status summary. |
+| `client-advisor` | Read, Grep | Surface client workflows straight from `playbook.md` and implementation templates (no command execution). |
+
+### Approval & safety guidelines
+
+- **Sudo**: the orchestrator detects whether credentials are cached. If not, the agent warns you before running sudo. For unattended runs, either execute `sudo -v` once beforehand or grant passwordless access to `run-bootstrap-and-verify.sh` via `/etc/sudoers.d/`.
+- **Tailscale**: if no auth key is provided, the bootstrap script prints a login URL. Approve the device in the Tailscale admin console; the agent reruns `tailscale status` afterwards.
+- **Read-only commands**: tailscale audits still request approval inside the Claude CLI to avoid surprises.
+- **Secrets**: the agent never prints `TAILSCALE_AUTH_KEY` or the Claude API key. Rotate keys after use if operational policy requires it.
+
+### Testing & troubleshooting
+
+- `npx tsc --noEmit` – Type-check the harness.
+- `npm run bootstrap -- --dry-run` – Fast smoke test to confirm prompts, preflight detection, and script linting.
+- If a Bash command fails, the agent reports the exit code and replays the command so you can rerun it manually.
+- Logs from the underlying scripts still appear in your terminal; copy them into incident reports as needed.
+
+💡 Keep the scripts in `../scripts/` intact—the subagents call them directly. Manual and agentic workflows stay in sync by sharing the same underlying automation.

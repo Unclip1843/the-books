@@ -90,31 +90,28 @@ echo "==> Installing tmux and fail2ban"
 
 echo "==> Ensuring Tailscale CLI is available"
 TAILSCALE_BIN="$(command -v tailscale || true)"
-if [[ -z "${TAILSCALE_BIN}" && -x "/Applications/Tailscale.app/Contents/MacOS/Tailscale" ]]; then
-  TAILSCALE_BIN="/Applications/Tailscale.app/Contents/MacOS/Tailscale"
+GUI_TAILSCALE="/Applications/Tailscale.app/Contents/MacOS/Tailscale"
+
+# Ignore the sandboxed App Store binary because it cannot enable SSH.
+if [[ -n "${TAILSCALE_BIN}" && "${TAILSCALE_BIN}" == "${GUI_TAILSCALE}" ]]; then
+  TAILSCALE_BIN=""
 fi
+
 if [[ -z "${TAILSCALE_BIN}" ]]; then
-  if "${BREW_BIN}" list tailscale >/dev/null 2>&1; then
-    :
-  else
-    echo "==> Installing Tailscale via Homebrew (CLI formula)"
+  if ! "${BREW_BIN}" list tailscale >/dev/null 2>&1; then
+    echo "    Installing Tailscale via Homebrew (CLI formula)"
     "${BREW_BIN}" install tailscale
-  fi
-  PREF="$("${BREW_BIN}" --prefix tailscale 2>/dev/null || true)"
-  if [[ -n "${PREF}" && -x "${PREF}/bin/tailscale" ]]; then
-    TAILSCALE_BIN="${PREF}/bin/tailscale"
   else
-    TAILSCALE_BIN="$(command -v tailscale || true)"
+    echo "    Tailscale Homebrew formula already installed"
   fi
+  eval "$("${BREW_BIN}" shellenv)"
+  TAILSCALE_BIN="$(command -v tailscale || true)"
 fi
-if [[ -z "${TAILSCALE_BIN}" && -x "/Applications/Tailscale.app/Contents/MacOS/Tailscale" ]]; then
-  TAILSCALE_BIN="/Applications/Tailscale.app/Contents/MacOS/Tailscale"
-fi
+
 if [[ -z "${TAILSCALE_BIN}" ]]; then
   cat <<'EOF' >&2
-Tailscale CLI not found. Install it manually with one of:
+Tailscale CLI not found on PATH. Install it manually with:
   brew install tailscale
-  brew install --cask tailscale
 Then rerun this script.
 EOF
   exit 1
